@@ -1,0 +1,17 @@
+function loadScript(URL, loaded = () => { }) {
+  const element = document.createElement("script");
+  element.src = URL;
+  element.type = "text/javascript";
+  element.onload = function () {
+    loaded();
+  };
+  document.getElementsByTagName("head")[0].appendChild(element);
+}
+const HOST = ((window || {}).location || {}).origin || '';
+const scriptURL = `${HOST}/apps/buckscc/sdk.min.js`;
+
+loadScript(scriptURL, () => {
+  // Script loaded callback
+  console.log("Script loaded!");
+});
+

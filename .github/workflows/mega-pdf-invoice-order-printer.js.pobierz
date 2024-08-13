@@ -1,0 +1,411 @@
+if (document.URL.indexOf('/account/orders/') + 1) {
+	if (typeof pdf_order_id == 'undefined') {
+		switch (Shopify.shop) {
+			case 'zwarte-roes-coffee.myshopify.com':
+				if (document.querySelector('meta[property="og:title"]').content.indexOf('Bestel ') + 1) {
+					var orderName = document.querySelector('meta[property="og:title"]').content.replace("Bestel ", "");
+
+					if (orderName.charAt(0) == '#') {
+						ArchGetOrderId(orderName);
+					}
+				}
+				break;
+			case 'talking-tables-uk.myshopify.com':
+				if (document.querySelector('meta[property="og:title"]').content.indexOf('Order ') + 1) {
+					var orderName = document.querySelector('meta[property="og:title"]').content.replace("Order ", "");
+
+					if (orderName.charAt(0) == 'W') {
+						if (Shopify.shop != 'shipped-io.myshopify.com') {
+							ArchGetOrderId(orderName);
+						}
+					}
+				}
+				break;
+			case 'dineamic.myshopify.com':
+				if (document.querySelector('meta[property="og:title"]').content.indexOf('Order ') + 1) {
+					var orderName = document.querySelector('meta[property="og:title"]').content.replace("Order ", "");
+
+					if (orderName.length > 0) {
+						if (Shopify.shop != 'shipped-io.myshopify.com') {
+							ArchGetOrderId(orderName);
+						}
+					}
+				}
+				break;
+			default:
+				if (document.querySelector('meta[property="og:title"]').content.indexOf('Order ') + 1) {
+					var orderName = document.querySelector('meta[property="og:title"]').content.replace("Order ", "");
+
+					if (orderName.charAt(0) == '#') {
+						if (Shopify.shop != 'shipped-io.myshopify.com') {
+							ArchGetOrderId(orderName);
+						}
+					}
+				}
+				break;
+		}
+	}
+	else {
+		sendByOrderId(pdf_order_id);
+	}
+}
+
+// It works if the order id = undefined. It is performed automatically when viewing detailed information about the order. Returns the order ID
+// Creates a document download button
+
+function sendByOrderId(pdf_order_id) {
+	var xhr = new XMLHttpRequest();
+	xhr.open("POST", 'https://apps.architechpro.com/shopify/public/pdfgenerator/getorderinfo', true);
+
+	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+	xhr.onreadystatechange = function() {
+		if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+			var res = JSON.parse(this.responseText);
+
+			if (res.status == 'true') {
+				var button = document.createElement('button');
+				button.setAttribute('class', 'button');
+				button.setAttribute('type', 'button');
+				button.setAttribute('value', 'Download PDF invoice');
+				button.innerText = 'Download PDF invoice';
+				button.setAttribute('style', 'display:block;margin:10px auto;');
+				button.setAttribute('onclick', 'generatePdf(\'' + Shopify.shop + '\',' + res.id + ',null)');
+
+				if (Shopify.shop == 'iwsc-invicta.myshopify.com') {
+					document.getElementsByClassName('sub-footer')[0].prepend(button);
+					return;
+				}
+
+				if (Shopify.shop == 'zwarte-roes-coffee.myshopify.com') {
+					document.getElementById('shopify-section-footer').prepend(button);
+					return;
+				}
+
+				if (Shopify.shop == 'talking-tables-uk.myshopify.com') {
+					document.querySelectorAll('.table-wrap')[0].prepend(button);
+					return;
+				}
+
+				if (typeof document.getElementsByTagName('footer')[0] != 'undefined') {
+					if (typeof document.getElementsByClassName('gdprBanner')[0] != 'undefined') {
+						document.getElementsByClassName('gdprBanner')[0].prepend(button);
+					}
+					else {
+						document.getElementsByTagName('footer')[0].prepend(button);
+					}
+				}
+				else {
+					var found = 0;
+					document.body.childNodes.forEach(function(item, key) {
+						if (item.tagName == "DIV" && item.offsetWidth > 0) {
+							var inf = item.getBoundingClientRect();
+
+							if ((inf.height) > (window.innerHeight / 2)) {
+								if (found == 0) {
+									item.append(button);
+									found = 1;
+									return;
+								}
+								else {
+									return;
+								}
+							}
+							else {
+								return;
+							}
+						}
+					});
+				}
+			}
+		}
+	}
+
+	xhr.send("order_id=" + pdf_order_id + "&shop=" + Shopify.shop + "&updated=true");
+}
+
+// It is performed automatically when viewing detailed information about the order. Returns the order ID
+// Creates a document download button
+
+function ArchGetOrderId(ordername) {
+	var xhr = new XMLHttpRequest();
+	xhr.open("POST", 'https://apps.architechpro.com/shopify/public/pdfgenerator/getorderinfo', true);
+
+	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+	xhr.onreadystatechange = function() {
+		if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+			var res = JSON.parse(this.responseText);
+
+			if (res.status == 'true') {
+				var button = document.createElement('button');
+				button.setAttribute('class', 'button');
+				button.setAttribute('type', 'button');
+				button.setAttribute('value', 'Download PDF invoice');
+				button.innerText = 'Download PDF invoice';
+				button.setAttribute('style', 'display:block;margin:10px auto;');
+				button.setAttribute('onclick', 'generatePdf(\'' + Shopify.shop + '\',' + res.id + ',null)');
+
+				if (Shopify.shop == 'iwsc-invicta.myshopify.com') {
+					document.getElementsByClassName('sub-footer')[0].prepend(button);
+					return;
+				}
+
+				if (Shopify.shop == 'zwarte-roes-coffee.myshopify.com') {
+					document.getElementById('shopify-section-footer').prepend(button);
+					return;
+				}
+
+				if (Shopify.shop == 'talking-tables-uk.myshopify.com') {
+					document.querySelectorAll('.table-wrap')[0].prepend(button);
+					return;
+				}
+
+				if (typeof document.getElementsByTagName('footer')[0] != 'undefined') {
+					if (typeof document.getElementsByClassName('gdprBanner')[0] != 'undefined') {
+						document.getElementsByClassName('gdprBanner')[0].prepend(button);
+					}
+					else {
+						document.getElementsByTagName('footer')[0].prepend(button);
+					}
+				}
+				else {
+					var found = 0;
+					document.body.childNodes.forEach(function(item, key) {
+						if (item.tagName == "DIV" && item.offsetWidth > 0) {
+							var inf = item.getBoundingClientRect();
+
+							if ((inf.height) > (window.innerHeight / 2)) {
+								if (found == 0) {
+									item.append(button);
+									found = 1;
+									return;
+								}
+								else {
+									return;
+								}
+							}
+							else {
+								return;
+							}
+						}
+					});
+				}
+			}
+
+		}
+	}
+	xhr.send("ordername=" + ordername + "&shop=" + Shopify.shop);
+}
+
+function generatePdf(shop, id, email) {
+	var btnEvent = event.target;
+
+	var generate_pdf_url = "https://apps.architechpro.com/shopify/public/pdfgenerator/generatepdf";
+
+	var request = new XMLHttpRequest();
+	request.open('POST', generate_pdf_url, true);
+	request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+
+	request.onload = function() {
+
+		if (request.status === 200) {
+			if (Shopify.shop == 'manduka-us-sandbox.myshopify.com' || Shopify.shop == 'manduka-eu-sandbox.myshopify.com') {
+				coursesDebugBase64("data:application/pdf;base64, " + encodeURI(request.response));
+			}
+			else {
+				
+				var orderName = document.querySelector('meta[property="og:title"]').content.replace("Order ", "");
+
+				if (orderName && orderName.charAt(0) == '#') 
+				{
+					var filename = 'order_'+orderName+'.pdf';
+				}
+				else
+				{
+					var filename = 'invoice.pdf';
+				}
+				
+				var link = document.createElement('a');
+				link.href = "data:application/pdf;base64, " + encodeURI(request.response);
+				link.target = "_blank";
+				link.download = filename;
+
+				document.body.appendChild(link);
+
+				link.click();
+			}
+		}
+		else {
+			alert("Error! Something went wrong.");
+		}
+	};
+
+	request.send("shop=" + shop + "&id=" + id + "&email=" + email + "&multiple=null&fromadmin=true&ver=1");
+}
+
+function coursesDebugBase64(base64URL) {
+	var win = window.open();
+	win.document.write('<iframe src="' + base64URL + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
+}
+
+if (document.readyState == 'complete') {
+	if (typeof window.pdf_getcheckoutinfo_val == 'undefined') {
+		window.pdf_getcheckoutinfo_val = true;
+		pdf_getcheckoutinfo();
+	}
+}
+else {
+	document.addEventListener("DOMContentLoaded", () => {
+		if (typeof window.pdf_getcheckoutinfo_val == 'undefined') {
+			window.pdf_getcheckoutinfo_val = true;
+			pdf_getcheckoutinfo();
+		}
+	});
+}
+
+function pdf_getcheckoutinfo() {
+	if (typeof Shopify.checkout != 'undefined') {
+		if (typeof document.getElementsByClassName('thank-you__additional-content')[0] != 'undefined') {
+			var getcheckoutinfo_pdf_url = "https://apps.architechpro.com/shopify/public/pdfgenerator/getcheckoutinfo";
+
+			var request = new XMLHttpRequest();
+			request.open('POST', getcheckoutinfo_pdf_url, true);
+			request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+			request.onload = function() {
+				if (request.status === 200) {
+					var res = JSON.parse(this.responseText);
+
+					if (res.pdf_customer_vat == 'true') {
+						var vatForm = '<form id="c_vat_group" style="margin-top: 20px;" onsubmit="event.preventDefault();pdf_send_custom_vat(' + Shopify.checkout.order_id + ');"><label style="padding-top: 42px;font-size: 22px; padding-bottom: 10px; display: inline-block;" for="c_vat_value">Your VAT number:</label><div style="padding-bottom: 10px;">Please specify your VAT number if you need it to appear on your invoice</div><input type="text" name="c_vat_value" id="c_vat_value" placeholder="MYVATN1234567890" style="display: inline-block; line-height: 40px; border: 1px solid #ccc; margin-bottom: 10px; border-radius: 6px; width: 70%; padding: 0px; padding-left: 3%; border-top-right-radius: 0px; border-bottom-right-radius: 0px;"/><button class="btn button" style="display: inline-block; border-top-left-radius: 0px; border-bottom-left-radius: 0px; padding: 11px; width: 26%;">Save</button></form>';
+						document.getElementsByClassName('thank-you__additional-content')[0].insertAdjacentHTML('afterEnd', vatForm);
+						if (res.download_checkout_invoice == 'true') {
+							var ch_span = '<span class="btn button" id="pdf-cus-upload" style="display: block; width: 100%; margin-top: 10px; margin-bottom: 10px;cursor: not-allowed; pointer-events: none;"  onclick="pdf_checkout_upload(' + Shopify.checkout.order_id + ',\'' + Shopify.shop + '\',null,' + Shopify.checkout.order_id + ')">Download PDF invoice</span>';
+							document.getElementById('c_vat_group').insertAdjacentHTML('afterend', ch_span);
+
+							document.getElementById('c_vat_value').addEventListener("change", function() {
+								document.getElementById('pdf-cus-upload').style.pointerEvents = "auto";
+								document.getElementById('pdf-cus-upload').style.cursor = "pointer";
+							});
+						}
+					}
+					else {
+						if (res.download_checkout_invoice == 'true') {
+							var ch_span = '<span class="btn button" style="display: block; width: 100%; margin-top: 20px; margin-bottom: 10px;"  onclick="pdf_checkout_upload(' + Shopify.checkout.order_id + ',\'' + Shopify.shop + '\',null,' + Shopify.checkout.order_id + ')">Download PDF invoice</span>';
+							document.getElementsByClassName('thank-you__additional-content')[0].insertAdjacentHTML('afterEnd', ch_span);
+						}
+					}
+				}
+			}
+
+			request.send("shop=" + Shopify.shop);
+		}
+	}
+}
+
+// function pdf_checkout_upload(id, shop, email, name) {
+// 	var btnEvent = event.target;
+// 	document.querySelector('#pdf-cus-upload').innerHTML = 'Downloading...';
+// 	document.querySelector('#pdf-cus-upload').style.pointerEvents = 'none';
+// 	var generate_pdf_url = "https://apps.architechpro.com/shopify/public/pdfgenerator/generatepdf";
+// 	var request = new XMLHttpRequest();
+// 	request.open('POST', generate_pdf_url, true);
+// 	request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+// 	request.onload = function() {
+// 		if (request.status === 200) {
+// 			var filename = name + '.pdf';
+// 			var link = document.createElement('a');
+// 			link.href = "data:application/pdf;base64, " + encodeURI(request.response);
+// 			link.target = "_blank";
+// 			link.download = filename;
+// 			document.body.appendChild(link);
+// 			link.click();
+// 		} else { alert("Error! Something went wrong."); }
+// 		document.querySelector('#pdf-cus-upload').innerHTML = 'Download PDF invoice';
+// 		document.querySelector('#pdf-cus-upload').style.pointerEvents = 'auto';
+// 	};
+// 	request.send("shop=" + shop + "&id=" + id + "&email=" + email + "&multiple=null&fromadmin=true&ver=1");
+// }
+// function pdf_send_custom_vat(order_id) {
+// 	document.querySelector('#c_vat_group button').innerHTML = 'Saving...';
+// 	document.querySelector('#c_vat_group button').style.pointerEvents = 'none';
+// 	var c_vat_value = document.getElementById('c_vat_value').value;
+// 	var customervat_pdf_url = "https://apps.architechpro.com/shopify/public/pdfgenerator/customervat";
+// 	var request = new XMLHttpRequest();
+// 	request.open('POST', customervat_pdf_url);
+// 	request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+// 	request.onload = function() {
+// 		document.querySelector('#c_vat_group button').innerHTML = 'Save';
+// 		document.querySelector('#c_vat_group button').style.pointerEvents = 'auto';
+// 		if (request.status !== 200) {
+// 			alert("Error! Something went wrong.");
+// 		}
+// 	};
+// 	request.send("shop=" + Shopify.shop + "&c_vat_value=" + c_vat_value + "&order_id=" + order_id);
+// }
+
+
+function pdf_custom_upload(id, shop, email, ordername) {
+	var btnEvent = event.target;
+
+	var generate_pdf_url = "https://apps.architechpro.com/shopify/public/pdfgenerator/generatepdf";
+
+	if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
+		var email = prompt("Please enter your email:");
+		if (email === null) {
+			return; //break out of the function early
+		}
+
+		if (!email == "") {
+			if (!email.match(/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/)) {
+				alert('Not a valid email.');
+				return;
+			}
+		}
+		else {
+			alert('Not a valid email.');
+			return;
+		}
+	}
+
+	var request = new XMLHttpRequest();
+	request.open('POST', generate_pdf_url, true);
+	request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+
+	request.onload = function() {
+
+		if (request.status === 200) {
+
+			if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
+				alert('Email has been successfully sent to: ' + email);
+				return;
+			}
+
+			if (ordername) {
+				var filename = ordername + '.pdf';
+			}
+			else {
+				var filename = 'invoice.pdf';
+			}
+
+			if ((navigator.userAgent.indexOf('Firefox') > -1)) {
+				var link = document.createElement('a');
+				link.href = "data:application/pdf;base64, " + encodeURI(request.response);
+				link.target = "_blank";
+				link.download = filename;
+
+				document.body.appendChild(link);
+
+				link.click();
+			}
+			else {
+				coursesDebugBase64("data:application/pdf;base64, " + encodeURI(request.response));
+			}
+		}
+		else {
+			alert("Error! Something went wrong.");
+		}
+	};
+
+	request.send("shop=" + shop + "&id=" + id + "&email=" + email + "&multiple=null&fromadmin=true&ver=1");
+}

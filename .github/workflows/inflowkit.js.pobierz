@@ -1,0 +1,232 @@
+(() => {
+  var sellingPlanContainer = document.getElementById("selling-plan-fieldset");
+  if (sellingPlanContainer) {
+    var product = [];
+
+    if (sellingPlanContainer && sellingPlanContainer.dataset && sellingPlanContainer.dataset.product) {
+      product = JSON.parse(sellingPlanContainer.dataset.product);
+    }
+
+
+    var findSelectedVariant = function (variant_id) {
+      var selectedVariant;
+      if (product && product.variants && product.variants.length > 0) {
+        for (var i = 0; i < product.variants.length; i++) {
+          if (`${product.variants[i].id}` === `${variant_id}`) {
+            selectedVariant = product.variants[i];
+            break;
+          }
+        }
+      }
+      return selectedVariant;
+    };
+
+    var firstTimeUrl = document.URL;
+    document.addEventListener("change", function () {
+      var currentPageUrl = document.URL;
+      var url = new URL(currentPageUrl);
+      var isVariantUrl = url.searchParams.get("variant");
+
+      currentPageUrl = isVariantUrl ? currentPageUrl : isVariantUrl;
+
+      if (currentPageUrl && firstTimeUrl != currentPageUrl) {
+        firstTimeUrl = currentPageUrl;
+        var selectedVariant = findSelectedVariant(isVariantUrl);
+
+        var availableSellingPlanAllocations =
+          selectedVariant.selling_plan_allocations;
+
+        //Get all selling plans that were created by inflowkit
+        const inflowkit_selling_plan_groups = product.selling_plan_groups.filter(
+          (selling_plan_group) => {
+            return selling_plan_group.app_id == "inflowkit";
+          }
+        );
+
+        let selling_plans_count = 0;
+
+
+        inflowkit_selling_plan_groups.map((selling_plan_group) => {
+          //Count selling plans
+          selling_plans_count =
+            selling_plans_count + selling_plan_group.selling_plans.length;
+
+          //Hide all the groups
+
+          //Hide all the groups
+          var selling_plan_group_element = document.getElementById(
+            `${selling_plan_group.id}`
+          );
+          selling_plan_group_element.setAttribute("hidden", "hidden");
+          selling_plan_group_element.setAttribute("disabled", "disabled");
+
+          //Hide all the selling plans as well
+          selling_plan_group.selling_plans.map((selling_plan) => {
+            var selling_plan_element = document.getElementById(
+              `${selling_plan.id}`
+            );
+            if (selling_plan_element) {
+              selling_plan_element.setAttribute("hidden", "hidden");
+              selling_plan_element.setAttribute("disabled", "disabled");
+            }
+            ///unchack all the selling plan input
+            var selling_plan_input = document.getElementById(
+              `selling_plan_input_${selling_plan.id}`
+            );
+
+            if (selling_plan_input) {
+              selling_plan_input.removeAttribute("checked");
+            }
+          });
+
+          //If it doesnt require selling plan selling plan id 
+          if (!product.requires_selling_plan) {
+            // var inflowkit_selling_plan_hidden_field_element =
+            //   document.getElementById("inflowkit-selling-plan-hidden-field");
+            // inflowkit_selling_plan_hidden_field_element.value = ``;
+
+            //Iterate throug all the selling plan hidden fields 
+            let elements = document.getElementsByClassName("inflowkit-selling-plan-hidden-field");
+            for (i = 0; i <= elements.length; i++) {
+              elements[i].value = ``;
+            }
+
+          }
+        });
+
+        //Remove the current plans and show only the plans that belong to the product variant
+        availableSellingPlanAllocations.map((selling_plan, index) => {
+          var selling_plan_group_element = document.getElementById(
+            `${selling_plan.selling_plan_group_id}`
+          );
+
+          if (selling_plan_group_element) {
+            selling_plan_group_element.removeAttribute("hidden", false);
+            selling_plan_group_element.removeAttribute("disabled", false);
+
+            if (product.requires_selling_plan && index == 0) {
+              var selling_plan_element = document.getElementById(
+                `selling_plan_input_${selling_plan.selling_plan_id}`
+              );
+              if (selling_plan_element) {
+                selling_plan_element.setAttribute("checked", "checked");
+              }
+
+
+
+              let elements = document.getElementsByClassName("inflowkit-selling-plan-hidden-field");
+              for (i = 0; i <= elements.length; i++) {
+                elements[i].value = `${selling_plan.selling_plan_id}`;
+              }
+
+              var selling_plan_description = document.getElementById(
+                "subscription_policy"
+              );
+
+              selling_plan_description.innerHTML = selling_plan_element.dataset.description;
+
+            }
+
+          }
+          //Selling plan id disable classes
+
+          var selling_plan_element = document.getElementById(
+            `${selling_plan.selling_plan_id}`
+          );
+
+          if (selling_plan_select) {
+            selling_plan_element.removeAttribute("hidden");
+            selling_plan_element.removeAttribute("disabled");
+
+
+          }
+        });
+
+      }
+    });
+
+    let selling_plan_select = document.getElementById("inflowkit-block-select");
+    if (selling_plan_select != null) {
+      // Watch for variant selection to update selling plan option selectors
+      selling_plan_select.addEventListener("change", function () {
+        var e = document.getElementById("inflowkit-block-select");
+
+        if (e.selectedIndex > 0) {
+
+          var selling_plan_description = document.getElementById(
+            "subscription_policy"
+          );
+
+          //If option selected is null assign the description null
+
+          selling_plan_description.innerHTML =
+            e.options[e.selectedIndex].dataset.description;
+
+          let elements = document.getElementsByClassName("inflowkit-selling-plan-hidden-field");
+          for (i = 0; i <= elements.length; i++) {
+            elements[i].value = e.options[e.selectedIndex].value;
+          }
+        }
+      });
+    }
+    var selling_plans_element = document.querySelector(
+      "input[name='selling_plans']"
+    );
+
+    if (selling_plans_element) {
+      selling_plans_element.change(function () {
+        var value = document.querySelector(
+          "input[name='selling_plans']:checked"
+        ).value;
+
+        if (value) {
+
+          let elements = document.getElementsByClassName("inflowkit-selling-plan-hidden-field");
+          for (i = 0; i <= elements.length; i++) {
+            elements[i].value = value;
+          }
+
+          document.getElementById(
+            "subscription_policy"
+          ).innerHTML = `<p id="p1">Subscription policy</p>`;
+        } else {
+
+          let elements = document.getElementsByClassName("inflowkit-selling-plan-hidden-field");
+          for (i = 0; i <= elements.length; i++) {
+            elements[i].value = "";
+          }
+
+          document.getElementById("subscription_policy").innerHTML = ``;
+        }
+      });
+    }
+    //Radio button event lister
+    function onSelectSellingPlan(event) {
+      var selling_plan_description = document.getElementById(
+        "subscription_policy"
+      );
+      selling_plan_description.innerHTML = event.target.dataset.description;
+
+      // var inflowkit_selling_plan_hidden_field_element =
+      //   document.getElementById("inflowkit-selling-plan-hidden-field");
+      // inflowkit_selling_plan_hidden_field_element.value = ``;
+
+      let elements = document.getElementsByClassName("inflowkit-selling-plan-hidden-field");
+
+
+      for (i = 0; i <= elements.length; i++) {
+        elements[i].value = event.target.value;
+      }
+      document.querySelector('[name="selling_plan"]').value = `${event.target.value}`;
+    }
+
+
+
+    sellingPlanContainer
+      .querySelectorAll("input[name='selling_plan']")
+      .forEach((input) => {
+        input.addEventListener("change", onSelectSellingPlan);
+      });
+  }
+
+})();

@@ -1,0 +1,278 @@
+var isShopifyPOS = false;
+var isViewportListenerAdded;
+var HOST_NAME = 'https://slots-app.logbase.io';
+
+function loadChecker(destinationZipcode = undefined) {
+    var slotsRequest = new XMLHttpRequest();
+    slotsRequest.open('POST', `${HOST_NAME}/api/zipcodeValidator`, true);
+    slotsRequest.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+    slotsRequest.send(JSON.stringify({ "myShopifyDomain": isShopifyPOS ? shopifyPOSDomain : Shopify.shop, "destinationZipcode": destinationZipcode ? destinationZipcode : '' })); //shopifyPOSDomain in slots.html
+    slotsRequest.onload = function () {
+        if (slotsRequest.status === 200) {
+            let result = JSON.parse(slotsRequest.responseText);
+            if (result && result.isEnabled) {
+                if (!document.querySelector('#zipcode-checker')) {
+                    if (!((window.location.href.endsWith('/cart') || window.location.href.endsWith('/cart#') || window.location.href.endsWith('/cart/') || window.location.href.indexOf('/cart?') > -1))) {
+                        showZipcodeChecker(result);
+                        addZipcodeCheckerListener();
+                        addCloseButtonListener();
+                        addContinueShoppingButtonListener();
+                        addZipcodeCheckerSearchInputListener();
+                    }
+                }
+                else if (result.isFound) {
+                    let infoModal = document.querySelector('#zipcode-checker-info-modal');
+                    if (infoModal) {
+                        var design = getDesign(result.design);
+                        let infoHeading = document.querySelector('#checker-info-heading');
+                        if (infoHeading)
+                            infoHeading.innerHTML = design.ldCheckerSearchSuccessMessageType && design.ldCheckerSearchSuccessMessageType === 'custom' ? design.ldCheckerSearchSuccessMessage : 'Local delivery available';
+                        infoModal.style.display = 'flex';
+                    }
+                }
+                else if (result.destinationZipcode.length) {
+                    let infoModal = document.querySelector('#zipcode-checker-info-modal');
+                    if (infoModal) {
+                        var design = getDesign(result.design);
+                        let infoHeading = document.querySelector('#checker-info-heading');
+                        if (infoHeading)
+                            infoHeading.innerHTML = design.ldCheckerSearchErrorMessageType && design.ldCheckerSearchErrorMessageType === 'custom' ? design.ldCheckerSearchErrorMessage : 'Local delivery not available for this zip code';
+                        infoModal.style.display = 'flex';
+                    }
+                }
+            }
+            else {
+                var zipcodeChecker = document.querySelectorAll('#zipcode-checker');
+                if (zipcodeChecker && zipcodeChecker.length) {
+                    for (let checker of zipcodeChecker) {
+                        checker.remove();
+                    }
+                }
+            }
+        }
+    }
+}
+
+function showZipcodeChecker(setup) {
+    loadStyling();
+    var design = getDesign(setup.design);
+    var orderDeliveryLocationsHTML = '';
+    var zipcodeSearchHeading = design.ldCheckerSearchHeadingType && design.ldCheckerSearchHeadingType === 'custom' ? design.ldCheckerSearchHeading : 'Do we deliver?';
+    var zipcodeCheckerSearchButtonText = design.ldCheckerSearchButtonTextType && design.ldCheckerSearchButtonTextType === 'custom' ? design.ldCheckerSearchButtonText : 'Check';
+    var checkerInfoHeading = ''
+    var checkerContinueShoppingButtonText = design.ldCheckerContinueShoppingButtonTextType && design.ldCheckerContinueShoppingButtonTextType === 'custom' ? design.ldCheckerContinueShoppingButtonText : 'Continue Shopping';
+    orderDeliveryLocationsHTML += `
+    <div class="zipcode-checker-validator" id="zipcode-checker-validator">
+        <div class="zipcode-checker" id="zipcode-checker">
+            <div class="zipcode-checker-container" id="zipcode-checker-container">
+                <label for="zipcode-checker-label" style="font-weight:bold">${zipcodeSearchHeading}</label>
+                <input type="text" id="zipcode-checker-box" name="delivery-location-zip" autocomplete="off">
+                <input type="button" id="zipcode-checker-search" value="${zipcodeCheckerSearchButtonText}" style="cursor:pointer">
+            </div>
+            <div class="zipcode-checker-close" id="zipcode-checker-close" style="margin-right: 10px">
+                <img src="https://img.icons8.com/ios/30/000000/cancel.png"/>
+            </div>
+        </div>
+        <div class="zipcode-checker-info-modal" id="zipcode-checker-info-modal">
+            <div class="zipcode-checker-info-container" id="zipcode-checker-info-container">
+                <h2 class="checker-info-heading" id="checker-info-heading">${checkerInfoHeading}</h2>
+                <input type="button" id="zipcode-checker-continue-shopping" value="${checkerContinueShoppingButtonText}" style="cursor:pointer;background:black;color:white;min-height: 40px;border-radius: 5px;">
+            </div>
+        </div>
+    </div>`
+    if (isShopifyPOS) {
+        document.insertAdjacentHTML('afterbegin', orderDeliveryLocationsHTML);
+    }
+    else {
+        var header;
+        if(document.querySelector('#shopify-section-announcement-bar'))
+            header = document.querySelector('#shopify-section-announcement-bar');
+        else if(document.querySelector('#shopify-section-header'))
+            header = document.querySelector('#shopify-section-header');
+        else if(document.querySelector('header'))
+            header = document.querySelector('header');
+        var x = window.matchMedia("(max-width: 800px)")
+        if (header) {
+            if (x.matches) { // If media query matches
+                header.style.marginTop = '130px';
+            } else {
+                header.style.marginTop = '60px';
+            }
+        }
+        document.body.insertAdjacentHTML('beforeend', orderDeliveryLocationsHTML);
+    }
+}
+
+function addZipcodeCheckerListener() {
+    var zipcodeCheckerSearchInput = document.querySelector('#zipcode-checker-box');
+    if (zipcodeCheckerSearchInput) {
+        if (zipcodeCheckerSearchInput.getAttribute('listener') !== 'true') {
+            zipcodeCheckerSearchInput.setAttribute('listener', 'true');
+            if (zipcodeCheckerSearchInput.addEventListener) {
+                zipcodeCheckerSearchInput.addEventListener('keyup', function (event) {
+                    if (event.key === 'Enter' || event.keyCode === 13)
+                        loadChecker(zipcodeCheckerSearchInput.value);
+                });
+                zipcodeCheckerSearchInput.addEventListener('keypress', function (event) {
+                    if (event.key === 'Enter' || event.keyCode === 13)
+                        event.preventDefault();
+                    return false;
+                });
+            }
+            else {
+                zipcodeCheckerSearchInput.attachEvent('onkeyup', function (event) {
+                    if (event.key === 'Enter' || event.keyCode === 13)
+                        loadChecker(zipcodeCheckerSearchInput.value);
+                });
+                zipcodeCheckerSearchInput.attachEvent('keypress', function (event) {
+                    if (event.key === 'Enter' || event.keyCode === 13)
+                        event.preventDefault();
+                    return false;
+                });
+            }
+        }
+    }
+}
+
+function addContinueShoppingButtonListener() {
+    var continueShoppingButton = document.querySelector('#zipcode-checker-continue-shopping');
+    if (continueShoppingButton) {
+        if (continueShoppingButton.getAttribute('listener') !== 'true') {
+            continueShoppingButton.setAttribute('listener', 'true');
+            if (continueShoppingButton.addEventListener) {
+                continueShoppingButton.addEventListener('click', function (event) {
+                    let infoModal = document.querySelector('#zipcode-checker-info-modal');
+                    if (infoModal)
+                        infoModal.style.display = 'none';
+                });
+            }
+            else {
+                continueShoppingButton.attachEvent('onclick', function (event) {
+                    let infoModal = document.querySelector('#zipcode-checker-info-modal');
+                    if (infoModal)
+                        infoModal.style.display = 'none';
+                });
+            }
+        }
+    }
+}
+
+function addCloseButtonListener() {
+    var closeButton = document.querySelector('#zipcode-checker-close');
+    if (closeButton) {
+        if (closeButton.getAttribute('listener') !== 'true') {
+            closeButton.setAttribute('listener', 'true');
+            if (closeButton.addEventListener) {
+                closeButton.addEventListener('click', function (event) {
+                    let infoModal = document.querySelector('#zipcode-checker');
+                    if (infoModal)
+                        infoModal.style.display = 'none';
+                });
+            }
+            else {
+                closeButton.attachEvent('onclick', function (event) {
+                    let infoModal = document.querySelector('#zipcode-checker');
+                    if (infoModal)
+                        infoModal.style.display = 'none';
+                });
+            }
+        }
+    }
+}
+
+function addZipcodeCheckerSearchInputListener() {
+    var checkSearchInput = document.querySelector('#zipcode-checker-search');
+    if (checkSearchInput) {
+        if (checkSearchInput.getAttribute('listener') !== 'true') {
+            checkSearchInput.setAttribute('listener', 'true');
+            if (checkSearchInput.addEventListener) {
+                checkSearchInput.addEventListener('click', function (event) {
+                    let zipcodeCheckerSearchInput = document.querySelector('#zipcode-checker-box');
+                    if (zipcodeCheckerSearchInput && zipcodeCheckerSearchInput.value)
+                        loadChecker(zipcodeCheckerSearchInput.value);
+                });
+            }
+            else {
+                checkSearchInput.attachEvent('onclick', function (event) {
+                    let zipcodeCheckerSearchInput = document.querySelector('#zipcode-checker-box');
+                    if (zipcodeCheckerSearchInput && zipcodeCheckerSearchInput.value)
+                        loadChecker(zipcodeCheckerSearchInput.value);
+                });
+            }
+        }
+    }
+}
+
+function getDesign(availableDesign) {
+    if (availableDesign) {
+        var x = window.matchMedia('(max-width: 700px)');
+        if (!isViewportListenerAdded) {
+            x.addListener(loadChecker);
+            isViewportListenerAdded = true;
+        }
+        if (x.matches)
+            return availableDesign.mobile;
+        else
+            return availableDesign.desktop;
+    }
+    else
+        return undefined;
+}
+
+
+function loadStyling() {
+    var styles = '';
+    styles += '.zipcode-checker{ position: fixed; top: 0; left: 0; right: 0; display: flex; background: rgba(0,0,0,.7); align-items: center; justify-content: center; padding: 0.5em 0; z-index: 99998; }';
+    styles += '.zipcode-checker-container{ display: flex; align-items: center; justify-content: center; color: #fff; width: 100%; }';
+    styles += '.zipcode-checker-container input{ border-radius: 2px; font-size: 1em; margin: 0 10px 0 8px; border: 1px solid #fff; text-indent: 0.5em; background: #fff; color: #333; }';
+    styles += '.zipcode-checker-info-modal{z-index: 99999; background: rgba(0,0,0,.5); display: none; justify-content: center; flex-direction: column; position: fixed; top: 0; bottom: 0; left: 0; right: 0;}';
+    styles += '.zipcode-checker-info-container{ border-radius: 5px; box-shadow: 0 1px 4px rgb(0 0 0 / 50%); background: #fff; margin: 0 auto; display: flex; padding: 1.5em; flex-direction: column; text-align: center; min-width: 480px; max-width: 800px}';
+    styles += '#zipcode-checker-search{ text-align: center; min-width: auto; text-indent: unset; }';
+    styles += '#zipcode-checker-box{ min-width: 250px }';
+    styles += '.zipcode-checker-close img{ max-width: 100%; background: white; border-radius: 20px; border: 0;}';
+    styles += '@media only screen and (max-width: 700px){ .zipcode-checker-container{display: block;} label[for="zipcode-checker-label"]{margin-left: 8px} .zipcode-checker-info-container{min-width: auto } #zipcode-checker-box{ margin-bottom: 5px }}';
+
+    let sheet = document.getElementById("zipcode-checker-styles");
+    if (sheet) {
+        sheet.disabled = true;
+        sheet.parentNode.removeChild(sheet);
+    }
+
+    /* Create style document */
+    var css = document.createElement('style');
+    css.id = 'zipcode-checker-styles';
+    if (css.styleSheet)
+        css.styleSheet.cssText = styles;
+    else
+        css.appendChild(document.createTextNode(styles));
+
+    /* Append style to the tag name */
+    document.getElementsByTagName("head")[0].appendChild(css);
+}
+
+function getScriptCount(scripts) {
+    let matchingScriptCount = 0;
+    for (let i = 0; i < scripts.length; i++) {
+        if (scripts[i].src && scripts[i].src.startsWith(`${HOST_NAME}/zipcode-checker-loader.js`))
+            matchingScriptCount++;
+    }
+    return matchingScriptCount;
+}
+
+
+var scripts = document.getElementsByTagName("script");
+if (document.readyState === 'complete' && getScriptCount(scripts) > 1) {
+    console.log('Zipcode checker registered in head and scriptTag, so skipped running the script from scriptTag');
+}
+else if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    if (!isShopifyPOS)
+        loadChecker();
+}
+else {
+    document.addEventListener('DOMContentLoaded', function () {
+        if (!isShopifyPOS)
+            loadChecker();
+    });
+}
+
+
