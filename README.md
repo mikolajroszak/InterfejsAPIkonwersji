@@ -1,4 +1,4 @@
-# InterfejsAPIkonwersji-
+# InterfejsAPIkonwersji
 Interfejs API konwersji ! Słaba konfiguracja
 https://ads.pinterest.com/advertiser/
 
