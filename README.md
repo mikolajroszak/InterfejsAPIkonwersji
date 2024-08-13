@@ -1,4 +1,4 @@
-# InterfejsAPIkonwersji
+# Interfejs API konwersji by Mikołaj Roszak (poprawka 2024v.01.0)
 Interfejs API konwersji ! Słaba konfiguracja
 https://ads.pinterest.com/advertiser/
 
