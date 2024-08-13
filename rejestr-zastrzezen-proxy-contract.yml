@@ -1,0 +1,362 @@
+openapi: 3.0.3
+info:
+  title: API rejestru zastrzeżeń
+  description: API umożliwiające pobranie statusu zastrzeżenia numeru PESEL na dzień aktualny lub historyczny.
+  version: 1.3.1
+  contact:
+    name: Kancelaria Prezesa Rady Ministrów
+    email: zastrzeganiepesel@coi.gov.pl
+servers:
+  - url: '{schema}://{hostname}/api/v1'
+    description: Środowisko developerskie
+    variables:
+      schema:
+        description: Protokół komunikacji TLS/SSL lub Plain Text
+        default: https
+        enum:
+          - https
+          - http
+      hostname:
+        description: Adres serwera z usługą.
+        default: 'localhost:8082'
+        enum:
+          - 'localhost:8082'
+  - url: 'https://int-rejestr-zastrzezen.obywatel.gov.pl:2443/api/v1'
+    description: Środowisko integracyjne
+  - url: 'https://rejestr-zastrzezen.obywatel.gov.pl:2443/api/v1'
+    description: Środowisko produkcyjne
+paths:
+  /info:
+    get:
+      operationId: appInfo
+      tags:
+        - AppInfoController
+      summary: Informacje o aplikacji
+      description: Zwraca informację o aplikacji
+      parameters:
+        - schema:
+            $ref: '#/components/schemas/RequestId'
+          description: Unikalny identyfikator wywołania (UUID).
+          in: header
+          name: X-REQUEST-ID
+          required: true
+      responses:
+        '200':
+          description: Operacja zakończona sukcesem
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppInfo'
+  /status-zastrzezenia/aktualny:
+    post:
+      summary: Aktualny status zastrzeżenia numeru PESEL
+      description: |
+        Usługa zwraca aktualny status zastrzeżenia numeru PESEL oraz informacje o aktualności numeru PESEL (jeżeli dany numer PESEL był kiedykolwiek zarejestrowany w Rejestrze Zastrzeżeń).
+        Powinna być wykorzystywana w celu weryfikacji statusu zastrzeżenia numeru PESEL np. przed podpisaniem umowy.
+      requestBody:
+        description: Dane wejściowe usługi
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AktualnyStatusZastrzezeniaPeselRequest'
+      parameters:
+        - schema:
+            $ref: '#/components/schemas/RequestId'
+          description: Unikalny identyfikator wywołania (UUID).
+          in: header
+          name: X-REQUEST-ID
+          required: true
+      responses:
+        '200':
+          description: Status zastrzeżenia numeru PESEL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AktualnyStatusZastrzezeniaPeselResponse'
+        '400':
+          description: Brak zgodności żądania z kontraktem.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorsResponse'
+        '401':
+          description: Niepoprawne dane uwierzytelniające.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Brak uprawnień.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Wewnętrzny i niespodziewany błąd systemu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Błąd zwracany w momencie planowanej niedostępności
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - RejestrZastrzezenController
+      operationId: aktualny_status_zastrzezenia
+  /status-zastrzezenia/na-dzien:
+    post:
+      summary: Statusy zastrzeżenia numeru PESEL we wskazanym dniu
+      description: |
+        Usługa zwraca listę statusów zastrzeżenia numeru PESEL we wskazanym dniu.
+        Dzięki tej usłudze możliwe jest historyczne sprawdzenie, jakie były statusy zastrzeżenia numeru PESEL np. w dniu podpisania umowy.
+        Usługa NIE powinna służyć do weryfikacji statusu zastrzeżenia np. przed podpisaniem umowy.
+        W przeciwieństwie do usługi `/status-zastrzezenia/na-dzien` usługa ta nie zwraca informacji czy podany numer PESEL jest aktualny, czy historyczny.
+      requestBody:
+        description: Dane wejściowe usługi
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusyZastrzezeniaPeselNaDzienRequest'
+      parameters:
+        - schema:
+            $ref: '#/components/schemas/RequestId'
+          description: Unikalny identyfikator wywołania (UUID).
+          in: header
+          name: X-REQUEST-ID
+          required: true
+      responses:
+        '200':
+          description: Lista statusów zastrzeżenia numeru PESEL, które podany numer PESEL posiadał danego dnia. Lista posortowana od ostatnio wprowadzonego statusu.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusyZastrzezeniaPeselResponse'
+        '400':
+          description: Brak zgodności żądania z kontraktem.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorsResponse'
+        '401':
+          description: Niepoprawne dane uwierzytelniające.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Brak uprawnień.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Wewnętrzny i niespodziewany błąd systemu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Błąd zwracany w momencie planowanej niedostępności
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - RejestrZastrzezenController
+      operationId: statusy_zastrzezenia_na_dzien
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      description: Klucz API uzyskany w procesie wnioskowania o dostęp do Rejestru Zastrzeżeń
+      type: apiKey
+      in: header
+      name: X-API-KEY
+  schemas:
+    RequestId:
+      title: Unikalny identyfikator wywołania
+      description: Unikalny identyfikator wywołania
+      type: string
+      format: uuid
+      example: c8e401c7-0df7-4212-b1f7-33f65b5113c9
+    PESEL:
+      title: Numer ewidencyjny PESEL
+      description: Numer ewidencyjny PESEL
+      type: string
+      minLength: 11
+      maxLength: 11
+      pattern: '^[0-9]*$'
+      example: '16261522951'
+    Date:
+      title: Data
+      description: Data
+      type: string
+      format: date
+      example: '2021-01-30'
+    DateTime:
+      title: Data i czas
+      description: Data i czas
+      type: string
+      format: date-time
+      example: '2022-12-30T08:30:00+02:00'
+    StatusZastrzezenia:
+      description: Status zastrzeżenia
+      type: string
+      enum:
+        - ZASTRZEZONY
+        - NIEZASTRZEZONY
+    ErrorResponse:
+      title: Obiekt z danymi błędu.
+      description: Obiekt zwracany gdy wystąpi błąd przetwarzania.
+      type: object
+      properties:
+        kod:
+          description: Kod błędu
+          type: string
+          example: '20221120:000010'
+        komunikat:
+          description: Komunikat błędu
+          type: string
+          example: Nieprawidłowa suma kontrolna numeru PESEL
+        data:
+          $ref: '#/components/schemas/DateTime'
+      required:
+        - kod
+        - komunikat
+        - data
+    BadRequestResponse:
+      title: Obiekt z danymi błędu.
+      description: Obiekt zwracany gdy wystąpi błąd przetwarzania.
+      type: object
+      properties:
+        kod:
+          description: Kod błędu
+          type: string
+          example: '20221120:000010'
+        komunikat:
+          description: Komunikat błędu
+          type: string
+          example: Nieprawidłowa suma kontrolna numeru PESEL
+      required:
+        - kod
+        - komunikat
+    ErrorsResponse:
+      title: Obiekt agregujący listę błędów.
+      description: |
+        Obiekt zwracany gdy wystąpi błąd przetwarzania.
+        Kody błędów jakie mogą wystąpić można znaleźć w dokumentacji integracyjnej.
+      type: object
+      properties:
+        kod:
+          description: Kod błędu
+          type: string
+          example: '20221120:000012'
+        komunikat:
+          description: Komunikat błędu
+          type: string
+          example: Nieprawidłowe dane wejściowe
+        data:
+          $ref: '#/components/schemas/DateTime'
+        bledy:
+          type: array
+          items:
+            $ref: '#/components/schemas/BadRequestResponse'
+      required:
+        - kod
+        - komunikat
+        - data
+        - bledy
+    StatusyZastrzezeniaPeselNaDzienRequest:
+      title: Zapytanie o statusy zastrzeżenia numeru PESEL we wskazanym dniu
+      description: Dane wejściowe zapytania
+      properties:
+        powodWeryfikacji:
+          $ref: '#/components/schemas/PowodWeryfikacji'
+        PESEL:
+          $ref: '#/components/schemas/PESEL'
+        data:
+          $ref: '#/components/schemas/Date'
+      required:
+        - powodWeryfikacji
+        - PESEL
+        - data
+    AktualnyStatusZastrzezeniaPeselRequest:
+      title: Zapytanie o aktualny status zastrzeżenia numeru PESEL
+      description: Dane wejściowe zapytania
+      properties:
+        powodWeryfikacji:
+          $ref: '#/components/schemas/PowodWeryfikacji'
+        PESEL:
+          $ref: '#/components/schemas/PESEL'
+      required:
+        - powodWeryfikacji
+        - PESEL
+    AktualnyStatusZastrzezeniaPeselResponse:
+      title: Status zastrzeżenia numeru PESEL wraz z dodatkowymi informacjami
+      description: Obiekt zawierający dane pozwalające na weryfikację aktualnego statusu zastrzeżenia PESEL
+      properties:
+        aktualnyStatus:
+          $ref: '#/components/schemas/StatusZastrzezeniaPesel'
+        dataICzasWeryfikacji:
+          $ref: '#/components/schemas/DateTime'
+      required:
+        - aktualnyStatus
+        - dataICzasWeryfikacji
+    StatusyZastrzezeniaPeselResponse:
+      title: Statusy zastrzeżenia numeru PESEL wraz z dodatkowymi informacjami
+      description: Obiekt zawierający dane pozwalające na weryfikację listy statusów zastrzeżeń PESEL w danym dniu
+      properties:
+        statusy:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusZastrzezeniaPesel'
+        dataICzasWeryfikacji:
+          $ref: '#/components/schemas/DateTime'
+      required:
+        - statusy
+        - dataICzasWeryfikacji
+    StatusZastrzezeniaPesel:
+      title: Status zastrzeżenia numeru PESEL oraz informacje o datach związanych z tym statusem
+      description: Obiekt zawierający dane związane z odpowiedzią weryfikacji statusu zastrzeżenia numeru PESEL
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusZastrzezenia'
+        dataICzasPoczatkuWaznosciStatusu:
+          $ref: '#/components/schemas/DateTime'
+      required:
+        - statusZastrzezenia
+    PowodWeryfikacji:
+      title: Powód weryfikacji
+      description: Podczas weryfikacji należy wskazać opisowy powód weryfikacji zastrzeżenia numeru PESEL
+      type: string
+      minLength: 3
+      maxLength: 255
+    AppInfo:
+      title: Informacje o aplikacji
+      description: Zawiera informacje o wersji aplikacji oraz kontraktu
+      type: object
+      properties:
+        applicationName:
+          description: Nazwa aplikacji
+          type: string
+          example: Rejestr Zastrzeżeń
+        applicationVersion:
+          description: Aktualna wersja aplikacji
+          type: string
+          example: 1.0.3
+        contractVersion:
+          description: Aktualna wersja kontraktu
+          type: string
+          example: 1.0.15
+        timestamp:
+          description: Aktualna data i czas
+          type: string
+          format: date-time
+          example: '2022-12-30T08:30:00+02:00'
+security:
+  - ApiKeyAuth: []
+tags:
+  - name: RejestrZastrzezenController
+  - name: AppInfoController

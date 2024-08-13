@@ -1,0 +1,14 @@
+{
+   "name": "organizations/b76926c9-e8a1-4197-ae53-02692abe4312/apiKeys/137ed4b7-2829-4061-ae77-e693a8a4d763",
+   "principal": "997560fd-9e46-5b0c-8a81-8530937b3caf",
+   "principalType": "USER",
+   "publicKey": "-----BEGIN EC PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE76350ko78DW5aSNJFwpUJ0yvDP2M\nxogcMWEa+iMPaszxdbyhP8RwFeICE7zsp/3gemCz1etm1M6LS/7ux5AQOA==\n-----END EC PUBLIC KEY-----\n",
+   "privateKey": "-----BEGIN EC PRIVATE KEY-----\nMHcCAQEEIH8jpPKDtlh4TzfN4aSinhyrDh4yJuC4PCeNO4Glk1FDoAoGCCqGSM49\nAwEHoUQDQgAE76350ko78DW5aSNJFwpUJ0yvDP2MxogcMWEa+iMPaszxdbyhP8Rw\nFeICE7zsp/3gemCz1etm1M6LS/7ux5AQOA==\n-----END EC PRIVATE KEY-----\n",
+   "createTime": "2023-12-29T11:55:24.366650687Z",
+   "projectId": "187f8b0b-0cbd-481c-959f-eebf04cc802b",
+   "nickname": "MIKOLAJ-key-20231229115521163Z",
+   "scopes": [],
+   "allowedIps": [],
+   "keyType": "GENERAL_KEY",
+   "enabled": true
+}
