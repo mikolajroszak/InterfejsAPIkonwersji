@@ -1,0 +1,2 @@
+(self.__LOADABLE_LOADED_CHUNKS__=self.__LOADABLE_LOADED_CHUNKS__||[]).push([[84783],{278070:(_,l,r)=>{var L={locale:"pl-PL",i18nStrings:void 0,plural:r(389079)};_.exports=L},389079:_=>{_.exports=function(_){return 1==+_?0:_%10>=2&&_%10<=4&&(_%100<10||_%100>=20)?1:2}}}]);
+//# sourceMappingURL=https://sm.pinimg.com/webapp/locale-pl_PL-inlined-js-806471a4b37202a1.mjs.map
